@@ -72,9 +72,17 @@ export const Navbar: React.FC = () => {
 
       {/* Desktop Sidebar Navigation */}
       <nav className="navbar-desktop">
-        <div className="navbar-desktop-brand">
+        <div
+          className="navbar-desktop-brand"
+          style={{
+            background: '#0a0a1a',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            marginBottom: '32px',
+          }}
+        >
           <span style={{ fontSize: '28px' }}>🥑</span>
-          <span className="text-gradient">{t('appName')}</span>
+          <span style={{ color: '#00e676', fontWeight: 800 }}>{t('appName')}</span>
         </div>
 
         <div className="navbar-desktop-menu">

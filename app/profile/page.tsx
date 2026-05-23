@@ -227,8 +227,11 @@ export default function ProfilePage() {
 
         <div className="profile-grid-layout" style={{ width: '100%' }}>
           {/* Column 1: Config Form */}
-          <div className="card" style={{ padding: '24px' }}>
-            <h3 style={{ marginBottom: '20px' }}>{locale === 'th' ? 'การตั้งค่าเป้าหมายและร่างกาย' : 'Body & Goal Settings'}</h3>
+          <div className="card" style={{ padding: 0 }}>
+            <div className="card-header">
+              <p className="card-header-title">⚙️ {locale === 'th' ? 'ตั้งค่าเป้าหมาย' : 'Goal Settings'}</p>
+            </div>
+            <div className="card-body">
             <form onSubmit={handleSubmit}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div className="form-group">
@@ -348,14 +351,18 @@ export default function ProfilePage() {
                 )}
               </button>
             </form>
+            </div>
           </div>
 
           {/* Column 2: Targets and Weight logs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Target Display Card */}
             {profile && (
-              <div className="card" style={{ padding: '24px', border: '1px solid rgba(124, 77, 255, 0.2)' }}>
-                <h3 style={{ marginBottom: '16px' }}>{locale === 'th' ? 'เป้าหมายโภชนาการประจำวัน' : 'Your Daily Target Nutrition'}</h3>
+              <div className="card" style={{ padding: 0 }}>
+                <div className="card-header">
+                  <p className="card-header-title" style={{ color: '#7c4dff' }}>🎯 {locale === 'th' ? 'เป้าหมายโภชนาการประจำวัน' : 'Your Daily Target Nutrition'}</p>
+                </div>
+                <div className="card-body">
                 
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -369,26 +376,37 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="macro-container" style={{ marginTop: '0' }}>
-                  <div className="macro-box">
-                    <span className="macro-title" style={{ color: '#7c4dff' }}>{t('protein')}</span>
-                    <span className="macro-value">{profile.targetProtein || 0}<span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}> {t('unitGrams')}</span></span>
+                {/* Macro grid — LINE style */}
+                <div className="macro-grid" style={{ marginTop: '8px' }}>
+                  <div className="macro-grid-box macro-grid-box-protein">
+                    <span className="macro-grid-label">{t('protein')}</span>
+                    <span className="macro-grid-value macro-grid-value-protein">
+                      {profile.targetProtein || 0}<span style={{ fontSize: '12px', fontWeight: 500 }}>g</span>
+                    </span>
                   </div>
-                  <div className="macro-box">
-                    <span className="macro-title" style={{ color: '#00e676' }}>{t('carbs')}</span>
-                    <span className="macro-value">{profile.targetCarbs || 0}<span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}> {t('unitGrams')}</span></span>
+                  <div className="macro-grid-box macro-grid-box-carbs">
+                    <span className="macro-grid-label">{t('carbs')}</span>
+                    <span className="macro-grid-value macro-grid-value-carbs">
+                      {profile.targetCarbs || 0}<span style={{ fontSize: '12px', fontWeight: 500 }}>g</span>
+                    </span>
                   </div>
-                  <div className="macro-box">
-                    <span className="macro-title" style={{ color: '#ff9100' }}>{t('fat')}</span>
-                    <span className="macro-value">{profile.targetFat || 0}<span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}> {t('unitGrams')}</span></span>
+                  <div className="macro-grid-box macro-grid-box-fat">
+                    <span className="macro-grid-label">{t('fat')}</span>
+                    <span className="macro-grid-value macro-grid-value-fat">
+                      {profile.targetFat || 0}<span style={{ fontSize: '12px', fontWeight: 500 }}>g</span>
+                    </span>
                   </div>
+                </div>
                 </div>
               </div>
             )}
 
             {/* Weight Tracker Card */}
-            <div className="card" style={{ padding: '20px' }}>
-              <h3 style={{ marginBottom: '16px' }}>{t('weightTitle')}</h3>
+            <div className="card" style={{ padding: 0 }}>
+              <div className="card-header">
+                <p className="card-header-title" style={{ color: '#00b0ff' }}>⚖️ {t('weightTitle')}</p>
+              </div>
+              <div className="card-body">
               
               {/* Weight Trend Chart */}
               <div style={{ marginBottom: '20px', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', padding: '10px' }}>
@@ -432,6 +450,7 @@ export default function ProfilePage() {
                   ))}
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>

@@ -6,8 +6,6 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth/context';
 import { useTranslation } from '@/lib/i18n/context';
 import { Navbar } from '@/components/Navbar';
-import { CalorieRing } from '@/components/CalorieRing';
-import { MacroBar } from '@/components/MacroBar';
 import { FoodCard, FoodLogItem } from '@/components/FoodCard';
 import { WeeklyChart } from '@/components/WeeklyChart';
 import { WeightChart } from '@/components/WeightChart';
@@ -86,8 +84,8 @@ export default function DashboardPage() {
         setProfileLoading(false);
       }
 
-      // 2. Fetch Today's Food Logs
-      const todayStr = new Date().toISOString().split('T')[0];
+      // 2. Fetch Today's Food Logs (Bangkok time UTC+7)
+      const todayStr = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0];
       const foodLogsRes = await fetch(`/api/food-log?date=${todayStr}`, { headers });
       if (foodLogsRes.ok) {
         const foodLogsData = await foodLogsRes.json();
@@ -417,131 +415,157 @@ export default function DashboardPage() {
         ) : (
           /* Profile loaded: Main Dashboard Grid */
           <div className="animate-slide-in">
-            {/* Daily Summary Rings & Macros */}
-            <div className="card" style={{ marginBottom: '24px' }}>
-              <h2
-                style={{
-                  fontSize: '20px',
-                  marginBottom: '16px',
-                  textAlign: 'center',
-                  fontFamily: 'var(--font-heading)',
-                }}
-              >
-                {locale === 'th' ? 'สรุปโภชนาการวันนี้' : "Today's Nutrition"}
-              </h2>
+            {/* Daily Summary — LINE Flex bubble style */}
+            <div className="card" style={{ padding: 0, marginBottom: '24px' }}>
+              {/* Card header strip */}
+              <div className="card-header">
+                <p className="card-header-title">🔥 {locale === 'th' ? 'สรุปแคลอรี่วันนี้' : "Today's Calorie Summary"}</p>
+              </div>
+              {/* Card body */}
+              <div className="card-body">
+                {/* Large calorie display */}
+                <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: '44px',
+                      fontWeight: 800,
+                      color: consumedCalories > targetCalories ? '#ff4081' : '#00e676',
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {consumedCalories}
+                  </span>
+                  <span style={{ fontSize: '18px', color: '#90a0c0', fontWeight: 500 }}>
+                    {' '}/ {targetCalories} kcal
+                  </span>
+                </div>
 
-              <CalorieRing consumed={consumedCalories} target={targetCalories} />
+                {/* Progress bar */}
+                <div className="calorie-progress-wrap">
+                  <div
+                    className={`calorie-progress-bar${consumedCalories > targetCalories ? ' calorie-progress-bar-over' : ''}`}
+                    style={{ width: `${Math.min((consumedCalories / targetCalories) * 100, 100)}%` }}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#90a0c0', marginBottom: '4px' }}>
+                  <span>{locale === 'th' ? 'บริโภคแล้ว' : 'Consumed'}</span>
+                  <span>
+                    {consumedCalories > targetCalories
+                      ? `+${consumedCalories - targetCalories} ${locale === 'th' ? 'เกิน' : 'over'}`
+                      : `${targetCalories - consumedCalories} ${locale === 'th' ? 'เหลือ' : 'remaining'}`}
+                  </span>
+                </div>
 
-              <div className="macro-container">
-                <MacroBar
-                  label={t('protein')}
-                  consumed={consumedProtein}
-                  target={targetProtein}
-                  type="protein"
-                />
-                <MacroBar
-                  label={t('carbs')}
-                  consumed={consumedCarbs}
-                  target={targetCarbs}
-                  type="carbs"
-                />
-                <MacroBar label={t('fat')} consumed={consumedFat} target={targetFat} type="fat" />
+                {/* Macro grid: protein / carbs / fat */}
+                <div className="macro-grid">
+                  <div className="macro-grid-box macro-grid-box-protein">
+                    <span className="macro-grid-label">{locale === 'th' ? 'โปรตีน' : 'Protein'}</span>
+                    <span className="macro-grid-value macro-grid-value-protein">
+                      {Math.round(consumedProtein)}<span style={{ fontSize: '12px', fontWeight: 500 }}>g</span>
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#90a0c0' }}>/{targetProtein}g</span>
+                  </div>
+                  <div className="macro-grid-box macro-grid-box-carbs">
+                    <span className="macro-grid-label">{locale === 'th' ? 'คาร์บ' : 'Carbs'}</span>
+                    <span className="macro-grid-value macro-grid-value-carbs">
+                      {Math.round(consumedCarbs)}<span style={{ fontSize: '12px', fontWeight: 500 }}>g</span>
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#90a0c0' }}>/{targetCarbs}g</span>
+                  </div>
+                  <div className="macro-grid-box macro-grid-box-fat">
+                    <span className="macro-grid-label">{locale === 'th' ? 'ไขมัน' : 'Fat'}</span>
+                    <span className="macro-grid-value macro-grid-value-fat">
+                      {Math.round(consumedFat)}<span style={{ fontSize: '12px', fontWeight: 500 }}>g</span>
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#90a0c0' }}>/{targetFat}g</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Streak & Status info */}
+            {/* Streak & Status — LINE-style stat cards */}
             <div className="stats-grid">
               {/* Streak Card */}
-              <div
-                className="card"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: '140px',
-                  textAlign: 'center',
-                  marginBottom: 0,
-                }}
-              >
-                <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔥</div>
-                <div style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  {locale === 'th' ? 'สถิติต่อเนื่อง' : 'Current Streak'}
+              <div className="card" style={{ padding: 0, marginBottom: 0 }}>
+                <div className="card-header" style={{ borderRadius: '16px 16px 0 0' }}>
+                  <p className="card-header-title" style={{ color: '#ff9100', fontSize: '13px' }}>
+                    🔥 {locale === 'th' ? 'สถิติต่อเนื่อง' : 'Streak'}
+                  </p>
                 </div>
-                <div
-                  style={{
-                    fontSize: '28px',
-                    fontWeight: 800,
-                    color: 'var(--accent-orange)',
-                    marginTop: '4px',
-                  }}
-                >
-                  {stats?.streak || 0} {locale === 'th' ? 'วัน' : 'Days'}
+                <div className="card-body" style={{ textAlign: 'center', paddingTop: '20px', paddingBottom: '20px' }}>
+                  <div style={{ fontSize: '36px', fontWeight: 800, color: '#ff9100', fontFamily: 'var(--font-heading)' }}>
+                    {stats?.streak || 0}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#90a0c0', marginTop: '4px' }}>
+                    {locale === 'th' ? 'วัน' : 'Days'}
+                  </div>
                 </div>
               </div>
 
               {/* Goal Status Card */}
-              <div
-                className="card"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: '140px',
-                  textAlign: 'center',
-                  marginBottom: 0,
-                }}
-              >
-                <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎯</div>
-                <div style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  {locale === 'th' ? 'สถานะเป้าหมาย' : 'Goal Status'}
+              <div className="card" style={{ padding: 0, marginBottom: 0 }}>
+                <div className="card-header" style={{ borderRadius: '16px 16px 0 0' }}>
+                  <p
+                    className="card-header-title"
+                    style={{ color: consumedCalories > targetCalories ? '#ff4081' : '#00e676', fontSize: '13px' }}
+                  >
+                    🎯 {locale === 'th' ? 'สถานะเป้าหมาย' : 'Goal Status'}
+                  </p>
                 </div>
-                <div
-                  style={{
-                    fontSize: '18px',
-                    fontWeight: 800,
-                    color:
-                      consumedCalories > targetCalories ? 'var(--accent-pink)' : 'var(--accent-green)',
-                    marginTop: '4px',
-                  }}
-                >
-                  {consumedCalories > targetCalories
-                    ? locale === 'th'
-                      ? 'เกินเป้าหมาย'
-                      : 'Over Target'
-                    : locale === 'th'
-                    ? 'อยู่ในเกณฑ์ดี'
-                    : 'On Track'}
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  {consumedCalories > targetCalories
-                    ? `+${consumedCalories - targetCalories} kcal`
-                    : `${targetCalories - consumedCalories} ${
-                        locale === 'th' ? 'แคลอรี่ที่เหลือ' : 'kcal left'
-                      }`}
+                <div className="card-body" style={{ textAlign: 'center', paddingTop: '20px', paddingBottom: '20px' }}>
+                  <div
+                    style={{
+                      fontSize: '16px',
+                      fontWeight: 800,
+                      color: consumedCalories > targetCalories ? '#ff4081' : '#00e676',
+                      fontFamily: 'var(--font-heading)',
+                    }}
+                  >
+                    {consumedCalories > targetCalories
+                      ? locale === 'th' ? 'เกินเป้าหมาย' : 'Over Target'
+                      : locale === 'th' ? 'อยู่ในเกณฑ์ดี' : 'On Track'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#90a0c0', marginTop: '4px' }}>
+                    {consumedCalories > targetCalories
+                      ? `+${consumedCalories - targetCalories} kcal`
+                      : `${targetCalories - consumedCalories} ${locale === 'th' ? 'แคลอรี่เหลือ' : 'kcal left'}`}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Food Logs Section */}
             <div style={{ marginBottom: '32px', marginTop: '24px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '16px',
-                }}
-              >
-                <h3 style={{ margin: 0, fontSize: '20px' }}>{t('recentLogs')}</h3>
-                <button
-                  onClick={handleOpenAddModal}
-                  className="btn btn-outline-purple"
-                  style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '12px' }}
+              {/* LINE-style header card for food logs section */}
+              <div className="card" style={{ padding: 0, marginBottom: '16px' }}>
+                <div
+                  className="card-header"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderRadius: '16px',
+                  }}
                 >
-                  <span>➕ {t('addFoodManual')}</span>
-                </button>
+                  <p className="card-header-title" style={{ color: '#00b0ff' }}>🍽️ {t('recentLogs')}</p>
+                  <button
+                    onClick={handleOpenAddModal}
+                    style={{
+                      background: '#7c4dff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#ffffff',
+                      padding: '6px 14px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-heading)',
+                    }}
+                  >
+                    ➕ {t('addFoodManual')}
+                  </button>
+                </div>
               </div>
 
               {foodLogsLoading ? (
@@ -584,8 +608,11 @@ export default function DashboardPage() {
             </div>
 
             {/* Weekly Calorie Chart */}
-            <div className="card" style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>{t('weeklyTitle')}</h3>
+            <div className="card" style={{ padding: 0, marginBottom: '24px' }}>
+              <div className="card-header">
+                <p className="card-header-title" style={{ color: '#7c4dff' }}>📊 {t('weeklyTitle')}</p>
+              </div>
+              <div className="card-body">
               {statsLoading ? (
                 <div style={{ height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div
@@ -602,11 +629,15 @@ export default function DashboardPage() {
               ) : (
                 <WeeklyChart data={stats?.weeklyData || []} />
               )}
+              </div>
             </div>
 
             {/* Weight Tracker Section */}
-            <div className="card" style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>{t('weightTitle')}</h3>
+            <div className="card" style={{ padding: 0, marginBottom: '24px' }}>
+              <div className="card-header">
+                <p className="card-header-title" style={{ color: '#00b0ff' }}>⚖️ {t('weightTitle')}</p>
+              </div>
+              <div className="card-body">
               {weightLogsLoading ? (
                 <div style={{ height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div
@@ -666,6 +697,7 @@ export default function DashboardPage() {
                   </form>
                 </>
               )}
+              </div>
             </div>
           </div>
         )}

@@ -7,8 +7,6 @@ import { useTranslation } from '@/lib/i18n/context';
 import { Navbar } from '@/components/Navbar';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { FoodCard, FoodLogItem } from '@/components/FoodCard';
-import { CalorieRing } from '@/components/CalorieRing';
-import { MacroBar } from '@/components/MacroBar';
 
 // Helper to get local date string in YYYY-MM-DD format
 const getLocalDateString = (d: Date = new Date()) => {
@@ -261,19 +259,23 @@ export default function HistoryPage() {
         <LanguageToggle />
       </header>
 
-      {/* Date selector header widget */}
-      <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', padding: '16px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>📅</span>
-          <span style={{ fontWeight: 600, fontSize: '15px' }}>{locale === 'th' ? 'เลือกวันที่ดูประวัติ:' : 'Select History Date:'}</span>
+      {/* Date selector — LINE-style card */}
+      <div className="card" style={{ padding: 0, marginBottom: '24px' }}>
+        <div className="card-header">
+          <p className="card-header-title">📅 {locale === 'th' ? 'ดูประวัติอาหาร' : 'Food History'}</p>
         </div>
-        <input
-          type="date"
-          className="form-input"
-          style={{ width: 'auto', minWidth: '160px', padding: '8px 12px' }}
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-        />
+        <div className="card-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <span style={{ color: '#90a0c0', fontSize: '14px', fontWeight: 500 }}>
+            {locale === 'th' ? 'เลือกวันที่ดูประวัติ:' : 'Select history date:'}
+          </span>
+          <input
+            type="date"
+            className="form-input"
+            style={{ width: 'auto', minWidth: '160px', padding: '8px 12px' }}
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+          />
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', width: '100%' }}>
@@ -291,26 +293,82 @@ export default function HistoryPage() {
 
         <div className="history-grid-layout" style={{ width: '100%' }}>
           
-          {/* Left Column: Daily Summary */}
-          <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <h3 style={{ alignSelf: 'flex-start', marginBottom: '16px' }}>
-              {locale === 'th' ? 'สรุปโภชนาการประจำวัน' : 'Daily Nutrition Summary'}
-            </h3>
-            
-            <CalorieRing consumed={totalCalories} target={targets.calories} />
-            
-            <div className="macro-container" style={{ width: '100%', marginTop: '20px' }}>
-              <MacroBar label={t('protein')} consumed={totalProtein} target={targets.protein} type="protein" />
-              <MacroBar label={t('carbs')} consumed={totalCarbs} target={targets.carbs} type="carbs" />
-              <MacroBar label={t('fat')} consumed={totalFat} target={targets.fat} type="fat" />
+          {/* Left Column: Daily Summary — LINE bubble style */}
+          <div className="card" style={{ padding: 0 }}>
+            <div className="card-header">
+              <p className="card-header-title">📊 {locale === 'th' ? 'สรุปโภชนาการประจำวัน' : 'Daily Nutrition Summary'}</p>
+            </div>
+            <div className="card-body">
+              {/* Calorie display */}
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-heading)',
+                    fontSize: '40px',
+                    fontWeight: 800,
+                    color: totalCalories > targets.calories ? '#ff4081' : '#00e676',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {totalCalories}
+                </span>
+                <span style={{ fontSize: '16px', color: '#90a0c0', fontWeight: 500 }}>
+                  {' '}/ {targets.calories} kcal
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="calorie-progress-wrap">
+                <div
+                  className={`calorie-progress-bar${totalCalories > targets.calories ? ' calorie-progress-bar-over' : ''}`}
+                  style={{ width: `${Math.min((totalCalories / targets.calories) * 100, 100)}%` }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#90a0c0', marginBottom: '4px' }}>
+                <span>{locale === 'th' ? 'บริโภคแล้ว' : 'Consumed'}</span>
+                <span>
+                  {totalCalories > targets.calories
+                    ? `+${totalCalories - targets.calories} ${locale === 'th' ? 'เกิน' : 'over'}`
+                    : `${targets.calories - totalCalories} ${locale === 'th' ? 'เหลือ' : 'remaining'}`}
+                </span>
+              </div>
+
+              {/* Macro grid */}
+              <div className="macro-grid">
+                <div className="macro-grid-box macro-grid-box-protein">
+                  <span className="macro-grid-label">{locale === 'th' ? 'โปรตีน' : 'Protein'}</span>
+                  <span className="macro-grid-value macro-grid-value-protein">
+                    {Math.round(totalProtein)}<span style={{ fontSize: '12px', fontWeight: 500 }}>g</span>
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#90a0c0' }}>/{targets.protein}g</span>
+                </div>
+                <div className="macro-grid-box macro-grid-box-carbs">
+                  <span className="macro-grid-label">{locale === 'th' ? 'คาร์บ' : 'Carbs'}</span>
+                  <span className="macro-grid-value macro-grid-value-carbs">
+                    {Math.round(totalCarbs)}<span style={{ fontSize: '12px', fontWeight: 500 }}>g</span>
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#90a0c0' }}>/{targets.carbs}g</span>
+                </div>
+                <div className="macro-grid-box macro-grid-box-fat">
+                  <span className="macro-grid-label">{locale === 'th' ? 'ไขมัน' : 'Fat'}</span>
+                  <span className="macro-grid-value macro-grid-value-fat">
+                    {Math.round(totalFat)}<span style={{ fontSize: '12px', fontWeight: 500 }}>g</span>
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#90a0c0' }}>/{targets.fat}g</span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Right Column: List of logged food cards */}
           <div>
-            <h3 style={{ marginBottom: '16px' }}>
-              {locale === 'th' ? 'รายการอาหารมื้อหลักและมื้อว่าง' : 'Meals & Snacks'}
-            </h3>
+            <div className="card" style={{ padding: 0, marginBottom: '16px' }}>
+              <div className="card-header" style={{ borderRadius: '16px' }}>
+                <p className="card-header-title" style={{ color: '#00b0ff' }}>
+                  🍽️ {locale === 'th' ? 'รายการอาหารมื้อหลักและมื้อว่าง' : 'Meals & Snacks'}
+                </p>
+              </div>
+            </div>
 
             {fetchingLogs ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
