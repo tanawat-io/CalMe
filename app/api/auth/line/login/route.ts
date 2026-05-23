@@ -7,8 +7,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'LINE Login Client ID not configured on server' }, { status: 500 });
     }
 
-    // Determine redirect URI dynamically based on current request host
-    const origin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    // Determine redirect URI dynamically based on current request host / env variables
+    const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://calme-line.vercel.app';
     const redirectUri = `${origin}/api/auth/line/callback`;
 
     // Construct LINE authorization URL

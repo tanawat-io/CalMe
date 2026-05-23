@@ -214,7 +214,7 @@ async function handleSummaryCommand(lineUserId: string, replyToken: string, req:
     }
 
     // 3. Resolve dynamic dashboard URL
-    const origin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://calme-line.vercel.app';
     const dashboardUrl = `${origin}/dashboard`;
 
     const flexSummary = createSummaryFlexMessage(
@@ -738,7 +738,7 @@ export async function POST(req: NextRequest) {
           }
           
           if (text === 'เมนู' || text === 'menu' || text === 'information' || text === 'info') {
-            const origin = `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+            const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://calme-line.vercel.app';
             const menuMsg = createMainMenuFlexMessage(origin);
             await lineClient.replyMessage({
               replyToken,

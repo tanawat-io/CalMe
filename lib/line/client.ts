@@ -668,7 +668,7 @@ export function createOnboardingWelcomeFlexMessage(): line.messagingApi.FlexMess
         contents: [
           {
             type: 'text',
-            text: '🥑 ยินดีต้อนรับสู่ CalMe',
+            text: '🥑 คู่มือเริ่มต้นการใช้งาน CalMe',
             weight: 'bold',
             color: '#00e676',
             size: 'md'
@@ -683,7 +683,7 @@ export function createOnboardingWelcomeFlexMessage(): line.messagingApi.FlexMess
         contents: [
           {
             type: 'text',
-            text: 'เริ่มต้นการคำนวณแคลอรี่และเป้าหมายสุขภาพส่วนบุคคลของคุณใน 1 นาที!',
+            text: 'เริ่มต้นคำนวณแคลอรี่เป้าหมายส่วนบุคคล',
             weight: 'bold',
             size: 'sm',
             color: '#ffffff',
@@ -691,10 +691,182 @@ export function createOnboardingWelcomeFlexMessage(): line.messagingApi.FlexMess
           },
           {
             type: 'text',
-            text: 'บอทต้องการข้อมูลร่างกายพื้นฐาน ได้แก่ เพศ, อายุ, ส่วนสูง, น้ำหนัก, ระดับกิจกรรม และเป้าหมาย เพื่อนำไปคำนวณอัตราเผาผลาญ (TDEE) และสัดส่วนสารอาหารของคุณโดยอัตโนมัติครับ',
+            text: 'เพื่อประสิทธิภาพที่ดีที่สุดในการใช้ AI วิเคราะห์สารอาหารและแคลอรี่ บอทต้องการข้อมูลร่างกายพื้นฐานของคุณตาม 3 ขั้นตอนง่ายๆ ดังนี้ครับ:',
             size: 'xs',
             color: '#90a0c0',
             wrap: true
+          },
+          // Step 1
+          {
+            type: 'box',
+            layout: 'horizontal',
+            margin: 'lg',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#7c4dff1a',
+                width: '32px',
+                height: '32px',
+                cornerRadius: '16px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '1',
+                    color: '#7c4dff',
+                    weight: 'bold',
+                    size: 'sm',
+                    align: 'center'
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                margin: 'md',
+                flex: 4,
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'กรอกข้อมูลสัดส่วนร่างกาย',
+                    weight: 'bold',
+                    size: 'xs',
+                    color: '#ffffff'
+                  },
+                  {
+                    type: 'text',
+                    text: 'ระบุเพศ, อายุ, ส่วนสูง และน้ำหนักปัจจุบันของคุณ',
+                    size: 'xxs',
+                    color: '#90a0c0',
+                    wrap: true
+                  }
+                ]
+              }
+            ]
+          },
+          // Step 2
+          {
+            type: 'box',
+            layout: 'horizontal',
+            margin: 'md',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#00e6761a',
+                width: '32px',
+                height: '32px',
+                cornerRadius: '16px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '2',
+                    color: '#00e676',
+                    weight: 'bold',
+                    size: 'sm',
+                    align: 'center'
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                margin: 'md',
+                flex: 4,
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'เลือกระดับกิจกรรม & เป้าหมาย',
+                    weight: 'bold',
+                    size: 'xs',
+                    color: '#ffffff'
+                  },
+                  {
+                    type: 'text',
+                    text: 'ระดับการออกกำลังกาย และเป้าหมาย (ลด/คงที่/เพิ่มน้ำหนัก)',
+                    size: 'xxs',
+                    color: '#90a0c0',
+                    wrap: true
+                  }
+                ]
+              }
+            ]
+          },
+          // Step 3
+          {
+            type: 'box',
+            layout: 'horizontal',
+            margin: 'md',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#ff91001a',
+                width: '32px',
+                height: '32px',
+                cornerRadius: '16px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '3',
+                    color: '#ff9100',
+                    weight: 'bold',
+                    size: 'sm',
+                    align: 'center'
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                margin: 'md',
+                flex: 4,
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'รับเป้าหมายและเริ่มบันทึก!',
+                    weight: 'bold',
+                    size: 'xs',
+                    color: '#ffffff'
+                  },
+                  {
+                    type: 'text',
+                    text: 'ระบบจะคำนวณเป้าหมายแคลอรี่รายวันและสามารถส่งรูปเพื่อบันทึกทันที',
+                    size: 'xxs',
+                    color: '#90a0c0',
+                    wrap: true
+                  }
+                ]
+              }
+            ]
+          },
+          // Hint Banner
+          {
+            type: 'box',
+            layout: 'vertical',
+            margin: 'lg',
+            backgroundColor: '#ffffff05',
+            paddingAll: 'md',
+            cornerRadius: 'md',
+            contents: [
+              {
+                type: 'text',
+                text: '⏱️ ใช้เวลาตั้งค่าประมาณ 1 นาทีเท่านั้น',
+                color: '#ff9100',
+                size: 'xs',
+                weight: 'bold',
+                align: 'center'
+              }
+            ]
           }
         ]
       },
@@ -813,7 +985,7 @@ export function createMainMenuFlexMessage(baseUrl: string): line.messagingApi.Fl
             action: {
               type: 'uri',
               label: '🌐 เปิดดูหน้าเว็บแดชบอร์ด',
-              uri: baseUrl
+              uri: `${baseUrl}/dashboard`
             }
           }
         ]

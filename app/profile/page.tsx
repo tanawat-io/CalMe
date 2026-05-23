@@ -201,8 +201,14 @@ export default function ProfilePage() {
       )}
 
       {message && (
-        <div className="card" style={{ borderLeft: '4px solid var(--accent-green)', color: 'var(--accent-green)', padding: '12px 16px', marginBottom: '20px' }}>
-          {message}
+        <div className="card" style={{ borderLeft: '4px solid var(--accent-green)', padding: '16px 20px', marginBottom: '20px' }}>
+          <h4 style={{ color: 'var(--accent-green)', margin: '0 0 8px 0', fontSize: '15px', fontWeight: 'bold' }}>{message}</h4>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.5' }}>
+            {locale === 'th' 
+              ? '🎯 คำนวณเป้าหมายและแคลอรี่สำเร็จแล้ว! ขั้นตอนถัดไป: คุณสามารถคลิกเมนู แดชบอร์ด เพื่อดูความคืบหน้า หรือเริ่มถ่ายรูปอาหารส่งในแชต LINE Bot เพื่อบันทึกโภชนาการได้ทันทีครับ'
+              : '🎯 Goal and target calories configured successfully! Next steps: You can click the Dashboard menu to track progress, or start sending food photos to the LINE Bot to log nutrition instantly.'
+            }
+          </p>
         </div>
       )}
 
