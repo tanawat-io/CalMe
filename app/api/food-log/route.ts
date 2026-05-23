@@ -30,7 +30,9 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
+    // Default to Bangkok date (UTC+7) so the server-side date matches Thai users
+    const bangkokDateStr = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0];
+    const date = searchParams.get('date') || bangkokDateStr;
 
     const logsRef = adminDb.collection('users').doc(uid).collection('foodLogs');
     const snapshot = await logsRef.where('date', '==', date).get();
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing foodNameTh or calories' }, { status: 400 });
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0];
     const logRef = adminDb.collection('users').doc(uid).collection('foodLogs').doc();
 
     const newLog = {

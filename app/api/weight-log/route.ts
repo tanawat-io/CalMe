@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing weight value' }, { status: 400 });
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0];
     const userRef = adminDb.collection('users').doc(uid);
     
     // Check if user exists

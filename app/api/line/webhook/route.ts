@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase-admin';
-import { analyzeFoodImage, FoodAnalysisResult, FoodLog } from '@/lib/gemini';
+import { analyzeFoodImage, analyzeFoodText, FoodAnalysisResult, FoodLog } from '@/lib/gemini';
 import { calculateMacros, UserProfileData } from '@/lib/tdee';
 import {
   lineClient,
@@ -30,6 +30,15 @@ export interface UserProfile extends UserProfileData {
 }
 
 const channelSecret = process.env.LINE_CHANNEL_SECRET || '';
+
+/**
+ * Returns today's date in YYYY-MM-DD using Bangkok timezone (UTC+7).
+ * Thailand does not observe daylight saving time.
+ */
+function getBangkokDateStr(date: Date = new Date()): string {
+  const bangkokOffset = 7 * 60 * 60 * 1000; // UTC+7 in ms
+  return new Date(date.getTime() + bangkokOffset).toISOString().split('T')[0];
+}
 
 /**
  * Verify LINE Messaging API signature
@@ -101,7 +110,7 @@ async function getOrCreateUserProfile(lineUserId: string, displayName: string, p
  * Get today's total calories for a user
  */
 async function getTodayCalories(lineUserId: string): Promise<{ total: number; protein: number; carbs: number; fat: number }> {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getBangkokDateStr();
   const logsSnapshot = await adminDb
     .collection('users')
     .doc(lineUserId)
@@ -136,7 +145,7 @@ async function handleSummaryCommand(lineUserId: string, replyToken: string, req:
     const targetCals = userProfileDoc.data()?.targetCalories || 2000;
     
     // 1. Fetch today's confirmed meals from Firestore
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getBangkokDateStr();
     const logsSnapshot = await adminDb
       .collection('users')
       .doc(lineUserId)
@@ -193,13 +202,13 @@ async function handleSummaryCommand(lineUserId: string, replyToken: string, req:
     const foodLogsRef = adminDb.collection('users').doc(lineUserId).collection('foodLogs');
     
     while (true) {
-      const dateStr = checkDate.toISOString().split('T')[0];
+      const dateStr = getBangkokDateStr(checkDate);
       const logsSnap = await foodLogsRef
         .where('date', '==', dateStr)
         .where('confirmed', '==', true)
         .limit(1)
         .get();
-      
+
       if (!logsSnap.empty) {
         streak++;
         checkDate.setDate(checkDate.getDate() - 1);
@@ -207,7 +216,7 @@ async function handleSummaryCommand(lineUserId: string, replyToken: string, req:
         if (streak === 0) {
           const yesterday = new Date();
           yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          const yesterdayStr = getBangkokDateStr(yesterday);
           const yesterdaySnap = await foodLogsRef
             .where('date', '==', yesterdayStr)
             .where('confirmed', '==', true)
@@ -577,7 +586,7 @@ async function handleOnboardingText(
   if (currentStep === 'weight') {
     const val = parseFloat(text.replace(/[^0-9.]/g, ''));
     if (!isNaN(val) && val >= 30 && val <= 300) {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getBangkokDateStr();
       await userRef.collection('weightLogs').add({
         weight: val,
         date: todayStr,
@@ -670,7 +679,7 @@ async function handleOnboardingPostback(
 
   if (action === 'setup_weight') {
     const weightVal = parseFloat(value);
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getBangkokDateStr();
     await userRef.collection('weightLogs').add({
       weight: weightVal,
       date: todayStr,
@@ -845,7 +854,7 @@ export async function POST(req: NextRequest) {
               .collection('foodLogs')
               .doc(); // Auto-ID
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getBangkokDateStr();
 
             await logRef.set({
               foodName: analysis.foodName,
@@ -1024,7 +1033,7 @@ export async function POST(req: NextRequest) {
             }
 
             try {
-              const todayStr = new Date().toISOString().split('T')[0];
+              const todayStr = getBangkokDateStr();
 
               // Save to weight logs
               await adminDb
@@ -1084,22 +1093,71 @@ export async function POST(req: NextRequest) {
             }
           } 
           
-          // Default Help Command
+          // Food name text analysis (anything not matched above)
           else {
-            const locale = userProfile?.language || 'th';
-            const welcomeText = locale === 'th' 
-              ? `สวัสดีครับคุณ ${displayName}! ยินดีต้อนรับสู่ CalMe 🥑\n\nวิธีใช้งานบอท:\n1. 📸 ถ่ายรูปอาหารแล้วส่งให้บอทเพื่อวิเคราะห์แคลอรี่\n2. 📊 พิมพ์ "สรุป" เพื่อดูแคลอรี่และสารอาหารสะสมวันนี้\n3. ⚖️ พิมพ์ "น้ำหนัก <ตัวเลข>" เพื่อบันทึกน้ำหนักตัว (เช่น น้ำหนัก 70)\n4. ✏️ พิมพ์ "แคล <ตัวเลข>" เพื่อแก้ไขแคลอรี่ของเมนูล่าสุดที่รอยืนยัน (เช่น แคล 450)\n\nสามารถเปิดดูประวัติและตั้งค่าเป้าหมายเพิ่มเติมได้ที่เว็ปไซต์ CalMe ครับ!`
-              : `Hello ${displayName}! Welcome to CalMe 🥑\n\nHow to use:\n1. 📸 Send a food photo to analyze calories and macros.\n2. 📊 Type "summary" to check today's accumulated intake.\n3. ⚖️ Type "weight <number>" to log your weight (e.g., weight 70).\n4. ✏️ Type "cal <number>" to adjust calories of the latest unconfirmed food item (e.g. cal 450).\n\nManage goals and check history details on our Web Dashboard!`;
+            const originalText = message.text.trim();
+            try {
+              // Ask Gemini to identify this text as food
+              const analysis = await analyzeFoodText(originalText);
 
-            await lineClient.replyMessage({
-              replyToken,
-              messages: [
-                {
-                  type: 'text',
-                  text: welcomeText,
-                },
-              ],
-            });
+              // Gemini returns calories=0 / foodName='not_food' when input is not food
+              if (analysis.calories === 0 || analysis.foodName === 'not_food') {
+                throw new Error('not_food');
+              }
+
+              // Save as unconfirmed food log
+              const logRef = adminDb
+                .collection('users')
+                .doc(lineUserId)
+                .collection('foodLogs')
+                .doc();
+
+              const todayStr = getBangkokDateStr();
+
+              await logRef.set({
+                foodName: analysis.foodName,
+                foodNameTh: analysis.foodNameTh,
+                calories: analysis.calories,
+                protein: analysis.protein,
+                carbs: analysis.carbs,
+                fat: analysis.fat,
+                portionSize: analysis.portionSize,
+                mealType: analysis.mealType,
+                confirmed: false,
+                date: todayStr,
+                createdAt: new Date(),
+              });
+
+              // Get today totals (excl. this unconfirmed entry)
+              const todayTotals = await getTodayCalories(lineUserId);
+
+              const flexMsg = createFoodFlexMessage(
+                analysis,
+                logRef.id,
+                todayTotals.total,
+                targetCals
+              );
+
+              await lineClient.replyMessage({
+                replyToken,
+                messages: [flexMsg],
+              });
+            } catch (err) {
+              // Not food — show quick help prompt
+              const isNotFood = err instanceof Error && err.message === 'not_food';
+              if (!isNotFood) {
+                console.error('Error analyzing food text:', err);
+              }
+              const locale = userProfile?.language || 'th';
+              const helpText = locale === 'th'
+                ? `🥑 CalMe รับข้อมูลได้ดังนี้:\n📸 ส่งรูปอาหาร — AI วิเคราะห์แคลอรี่ทันที\n🍽️ พิมพ์ชื่ออาหาร — เช่น "ข้าวมันไก่ 1 จาน"\n📊 พิมพ์ "สรุป" — ดูยอดวันนี้\n⚖️ พิมพ์ "น้ำหนัก 70" — บันทึกน้ำหนัก\n☰ พิมพ์ "เมนู" — ดูทุกฟีเจอร์`
+                : `🥑 CalMe accepts:\n📸 Send a food photo — instant AI analysis\n🍽️ Type food name — e.g. "Pad Thai 1 plate"\n📊 Type "summary" — today's totals\n⚖️ Type "weight 70" — log weight\n☰ Type "menu" — all features`;
+
+              await lineClient.replyMessage({
+                replyToken,
+                messages: [{ type: 'text', text: helpText }],
+              });
+            }
           }
         }
       }
@@ -1160,12 +1218,23 @@ export async function POST(req: NextRequest) {
         }
 
         if (action === 'log_weight_prompt') {
+          const weightChoices = {
+            items: [45,50,55,60,65,70,75,80,85,90].map(w => ({
+              type: 'action' as const,
+              action: {
+                type: 'message' as const,
+                label: `${w} กก.`,
+                text: `น้ำหนัก ${w}`,
+              },
+            })),
+          };
           await lineClient.replyMessage({
             replyToken,
             messages: [
               {
                 type: 'text',
-                text: '⚖️ กรุณาพิมพ์น้ำหนักปัจจุบันของคุณ เช่น "น้ำหนัก 68" หรือ "weight 72.5" ส่งในห้องแชตนี้ เพื่อบันทึกและคำนวณเป้าหมายแคลอรี่ใหม่ครับ',
+                text: '⚖️ กรุณาเลือกหรือพิมพ์น้ำหนักปัจจุบันของคุณครับ (เช่น "น้ำหนัก 68.5")',
+                quickReply: weightChoices,
               },
             ],
           });

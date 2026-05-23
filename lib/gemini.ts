@@ -112,6 +112,70 @@ export async function analyzeFoodImage(
 }
 
 /**
+ * Analyzes a text description of food using Gemini text AI.
+ * Returns calories=0 when the input does not appear to be a food description.
+ */
+export async function analyzeFoodText(
+  foodDescription: string
+): Promise<FoodAnalysisResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey || apiKey === 'your_gemini_api_key') {
+    console.warn('Gemini API Key is not set. Using mock food analysis for text input.');
+    return getMockAnalysis();
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+
+    const prompt = `The user typed: "${foodDescription}"
+
+If this looks like a food/drink description (in any language, especially Thai or English), estimate the nutritional values. Account for any quantity mentioned (e.g. "2 bowls", "1 plate", "200g").
+
+If this is clearly NOT food (e.g. a greeting, random words, or a question), return calories=0 and foodName="not_food".
+
+Return JSON only.`;
+
+    const schema = {
+      type: 'OBJECT',
+      properties: {
+        foodName: { type: 'STRING', description: 'Food name in English. Use "not_food" if input is not a food description.' },
+        foodNameTh: { type: 'STRING', description: 'Food name in Thai.' },
+        calories: { type: 'INTEGER', description: 'Estimated total calories in kcal. Return 0 if not food.' },
+        protein: { type: 'INTEGER', description: 'Estimated protein in grams.' },
+        carbs: { type: 'INTEGER', description: 'Estimated carbohydrates in grams.' },
+        fat: { type: 'INTEGER', description: 'Estimated fat in grams.' },
+        portionSize: { type: 'STRING', description: 'Portion description in Thai (e.g. 1 จาน, 1 ถ้วย).' },
+        mealType: {
+          type: 'STRING',
+          enum: ['breakfast', 'lunch', 'dinner', 'snack'],
+          description: 'Best-fit meal category based on the food type and time context.',
+        },
+      },
+      required: ['foodName', 'foodNameTh', 'calories', 'protein', 'carbs', 'fat', 'portionSize', 'mealType'],
+    };
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ text: prompt }],
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: schema,
+      },
+    });
+
+    const text = response.text;
+    if (!text) throw new Error('Empty response from Gemini');
+
+    const data = JSON.parse(text) as FoodAnalysisResult;
+    return data;
+  } catch (error) {
+    console.error('Error analyzing food text with Gemini:', error);
+    return getMockAnalysis();
+  }
+}
+
+/**
  * Returns a randomized mock food analysis result for local testing/fallback.
  */
 function getMockAnalysis(): FoodAnalysisResult {
