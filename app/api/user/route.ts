@@ -75,6 +75,7 @@ export async function PUT(req: NextRequest) {
       activityLevel: activityLevel || currentData?.activityLevel || 'moderate',
       program: program || currentData?.program || 'build_muscle',
       language: language || currentData?.language || 'th',
+      setupStep: 'completed', // Complete onboarding wizard step
       updatedAt: new Date(),
     };
 
