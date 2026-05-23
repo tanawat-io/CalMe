@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"d:\\\\Dev\\\\CalMe\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

@@ -974,7 +974,7 @@ export function createMainMenuFlexMessage(baseUrl: string): line.messagingApi.Fl
             action: {
               type: 'postback',
               label: '⚙️ ตั้งค่าเป้าหมายแคลอรี่ใหม่',
-              data: 'action=setup_start'
+              data: 'action=show_setup_welcome'
             }
           },
           {
@@ -1015,14 +1015,15 @@ export function createOnboardingCompleteFlexMessage(profile: OnboardingProfile):
   const programNames = {
     lose_weight: 'ลดน้ำหนัก',
     maintain: 'คงน้ำหนักเดิม',
-    build_muscle: 'เพิ่มกล้ามเนื้อ'
+    build_muscle: 'เพิ่มกล้ามเนื้อ',
+    gain_weight: 'เพิ่มน้ำหนัก'
   };
   const activityNames = {
     sedentary: 'นั่งทำงานกับที่',
     light: 'ออกกำลังกายเบาๆ (1-3 วัน/สัปดาห์)',
     moderate: 'ออกกำลังกายปานกลาง (3-5 วัน/สัปดาห์)',
     active: 'ออกกำลังกายหนัก (6-7 วัน/สัปดาห์)',
-    extra: 'ออกกำลังกายหนักมาก'
+    very_active: 'ออกกำลังกายหนักมาก (นักกีฬา)'
   };
 
   const genderName = genderNames[profile.gender as keyof typeof genderNames] || profile.gender;
@@ -1247,6 +1248,158 @@ export function createOnboardingCompleteFlexMessage(profile: OnboardingProfile):
               type: 'postback',
               label: '📸 เริ่มถ่ายรูปบันทึกอาหาร',
               data: 'action=show_help_capture'
+            }
+          }
+        ]
+      }
+    }
+  };
+}
+
+/**
+ * Helper to construct a tutorial Flex Message shown after onboarding completion.
+ */
+export function createTutorialFlexMessage(): line.messagingApi.FlexMessage {
+  return {
+    type: 'flex',
+    altText: 'CalMe: วิธีใช้งานบอท',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#0a0a1a',
+        contents: [
+          {
+            type: 'text',
+            text: '🚀 วิธีใช้งาน CalMe Bot',
+            weight: 'bold',
+            color: '#00e676',
+            size: 'md'
+          }
+        ]
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#12122a',
+        spacing: 'md',
+        contents: [
+          {
+            type: 'text',
+            text: 'คุณพร้อมเริ่มติดตามแคลอรี่แล้ว! นี่คือสิ่งที่คุณทำได้ทันที:',
+            size: 'xs',
+            color: '#90a0c0',
+            wrap: true
+          },
+          // Step 1
+          {
+            type: 'box',
+            layout: 'horizontal',
+            margin: 'lg',
+            alignItems: 'center',
+            contents: [
+              { type: 'text', text: '📸', size: 'xl', flex: 1 },
+              {
+                type: 'box',
+                layout: 'vertical',
+                margin: 'md',
+                flex: 5,
+                contents: [
+                  { type: 'text', text: 'ถ่ายรูปอาหาร', weight: 'bold', size: 'sm', color: '#ffffff' },
+                  { type: 'text', text: 'ส่งรูปในแชตนี้ AI จะวิเคราะห์แคลอรี่และสารอาหารให้ทันที', size: 'xxs', color: '#90a0c0', wrap: true }
+                ]
+              }
+            ]
+          },
+          // Step 2
+          {
+            type: 'box',
+            layout: 'horizontal',
+            margin: 'sm',
+            alignItems: 'center',
+            contents: [
+              { type: 'text', text: '✍️', size: 'xl', flex: 1 },
+              {
+                type: 'box',
+                layout: 'vertical',
+                margin: 'md',
+                flex: 5,
+                contents: [
+                  { type: 'text', text: 'พิมพ์ชื่ออาหาร', weight: 'bold', size: 'sm', color: '#ffffff' },
+                  { type: 'text', text: 'เช่น "ข้าวมันไก่ 1 จาน" หรือ "กาแฟเย็น" AI บันทึกให้อัตโนมัติ', size: 'xxs', color: '#90a0c0', wrap: true }
+                ]
+              }
+            ]
+          },
+          // Step 3
+          {
+            type: 'box',
+            layout: 'horizontal',
+            margin: 'sm',
+            alignItems: 'center',
+            contents: [
+              { type: 'text', text: '📊', size: 'xl', flex: 1 },
+              {
+                type: 'box',
+                layout: 'vertical',
+                margin: 'md',
+                flex: 5,
+                contents: [
+                  { type: 'text', text: 'ดูสรุปวันนี้', weight: 'bold', size: 'sm', color: '#ffffff' },
+                  { type: 'text', text: 'พิมพ์ "สรุป" หรือ "summary" เพื่อดูยอดแคลอรี่และ macro ประจำวัน', size: 'xxs', color: '#90a0c0', wrap: true }
+                ]
+              }
+            ]
+          },
+          // Step 4
+          {
+            type: 'box',
+            layout: 'horizontal',
+            margin: 'sm',
+            alignItems: 'center',
+            contents: [
+              { type: 'text', text: '☰', size: 'xl', flex: 1 },
+              {
+                type: 'box',
+                layout: 'vertical',
+                margin: 'md',
+                flex: 5,
+                contents: [
+                  { type: 'text', text: 'เมนูหลัก', weight: 'bold', size: 'sm', color: '#ffffff' },
+                  { type: 'text', text: 'พิมพ์ "เมนู" หรือ "menu" เพื่อดูทุกฟีเจอร์ เช่น ดูประวัติ, บันทึกน้ำหนัก, ตั้งค่าใหม่', size: 'xxs', color: '#90a0c0', wrap: true }
+                ]
+              }
+            ]
+          },
+          // Hint banner
+          {
+            type: 'box',
+            layout: 'vertical',
+            margin: 'lg',
+            backgroundColor: '#ffffff05',
+            paddingAll: 'sm',
+            cornerRadius: 'md',
+            contents: [
+              { type: 'text', text: '💡 ดูข้อมูลสุขภาพและกราฟโภชนาการได้ที่เว็บ Dashboard', size: 'xxs', color: '#ff9100', align: 'center', wrap: true }
+            ]
+          }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#0a0a1a',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#7c4dff',
+            action: {
+              type: 'postback',
+              label: '☰ เปิดเมนูหลัก',
+              data: 'action=show_menu'
             }
           }
         ]

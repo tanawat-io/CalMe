@@ -22,7 +22,7 @@ export default function ProfilePage() {
   const [activityLevel, setActivityLevel] = useState<
     'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
   >('moderate');
-  const [program, setProgram] = useState<'lose_weight' | 'gain_weight' | 'build_muscle'>('build_muscle');
+  const [program, setProgram] = useState<'lose_weight' | 'maintain' | 'build_muscle' | 'gain_weight'>('build_muscle');
 
   // Page UX States
   const [profile, setProfile] = useState<any>(null);
@@ -307,6 +307,13 @@ export default function ProfilePage() {
                     icon="🔥"
                     active={program === 'lose_weight'}
                     onClick={() => setProgram('lose_weight')}
+                  />
+                  <ProgramCard
+                    title={t('programMaintain')}
+                    description={locale === 'th' ? 'คงน้ำหนักและรูปร่างปัจจุบัน สมดุลโภชนาการเหมาะสม' : 'Maintain current weight and body composition with balanced nutrition'}
+                    icon="⚖️"
+                    active={program === 'maintain'}
+                    onClick={() => setProgram('maintain')}
                   />
                   <ProgramCard
                     title={t('programMuscle')}

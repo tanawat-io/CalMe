@@ -1,6 +1,6 @@
 export type Gender = 'male' | 'female';
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-export type FitnessProgram = 'lose_weight' | 'gain_weight' | 'build_muscle';
+export type FitnessProgram = 'lose_weight' | 'maintain' | 'build_muscle' | 'gain_weight';
 
 export interface UserProfileData {
   weight: number;      // kg
@@ -64,7 +64,16 @@ export function calculateMacros(profile: UserProfileData): MacroTarget {
       carbsPercent = 0.35;
       fatPercent = 0.25;
       break;
-      
+
+    case 'maintain':
+      // No calorie adjustment — stay at TDEE
+      targetCalories = Math.round(tdee);
+      // Balanced macros for body composition maintenance
+      proteinPercent = 0.30;
+      carbsPercent = 0.40;
+      fatPercent = 0.30;
+      break;
+
     case 'gain_weight':
       // Calorie surplus (TDEE + 500 kcal)
       targetCalories = Math.round(tdee + 500);

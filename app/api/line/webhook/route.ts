@@ -4,15 +4,16 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase-admin';
 import { analyzeFoodImage, FoodAnalysisResult, FoodLog } from '@/lib/gemini';
 import { calculateMacros, UserProfileData } from '@/lib/tdee';
-import { 
-  lineClient, 
-  getLineImageContent, 
-  createFoodFlexMessage, 
+import {
+  lineClient,
+  getLineImageContent,
+  createFoodFlexMessage,
   createSummaryFlexMessage,
   createEditMenuFlexMessage,
   createOnboardingWelcomeFlexMessage,
   createMainMenuFlexMessage,
-  createOnboardingCompleteFlexMessage
+  createOnboardingCompleteFlexMessage,
+  createTutorialFlexMessage
 } from '@/lib/line/client';
 
 export interface UserProfile extends UserProfileData {
@@ -82,6 +83,17 @@ async function getOrCreateUserProfile(lineUserId: string, displayName: string, p
   };
 
   await userRef.set(fullProfile);
+
+  // Send welcome message to new user
+  try {
+    await lineClient.pushMessage({
+      to: lineUserId,
+      messages: [createOnboardingWelcomeFlexMessage()]
+    });
+  } catch (e) {
+    console.error('Failed to send welcome message to new user:', e);
+  }
+
   return fullProfile;
 }
 
@@ -318,10 +330,10 @@ function getActivityQuickReplies() {
   return {
     items: [
       { label: '🛋️ ขยับน้อยมาก', val: 'sedentary', display: 'ระดับกิจกรรม: นั่งทำงานกับที่' },
-      { label: '🚶 เบาๆ (1-3 วัน/สัปดาห์)', val: 'light', display: 'ระดับกิจกรรม: ออกกำลังกายเบาๆ' },
-      { label: '🏃 ปานกลาง (3-5 วัน/สัปดาห์)', val: 'moderate', display: 'ระดับกิจกรรม: ออกกำลังกายปานกลาง' },
-      { label: '🏋️ หนัก (6-7 วัน/สัปดาห์)', val: 'active', display: 'ระดับกิจกรรม: ออกกำลังกายหนัก' },
-      { label: '🚴 หนักมาก (เป็นนักกีฬา)', val: 'extra', display: 'ระดับกิจกรรม: หนักมาก' }
+      { label: '🚶 เบาๆ (1-3 วัน)', val: 'light', display: 'ระดับกิจกรรม: ออกกำลังกายเบาๆ' },
+      { label: '🏃 ปานกลาง (3-5 วัน)', val: 'moderate', display: 'ระดับกิจกรรม: ออกกำลังกายปานกลาง' },
+      { label: '🏋️ หนัก (6-7 วัน)', val: 'active', display: 'ระดับกิจกรรม: ออกกำลังกายหนัก' },
+      { label: '🚴 หนักมาก/นักกีฬา', val: 'very_active', display: 'ระดับกิจกรรม: ออกกำลังกายหนักมาก' }
     ].map(item => ({
       type: 'action' as const,
       action: {
@@ -339,7 +351,8 @@ function getProgramQuickReplies() {
     items: [
       { label: '📉 ลดน้ำหนัก', val: 'lose_weight', display: 'เป้าหมาย: ลดน้ำหนัก' },
       { label: '⚖️ คงน้ำหนักเดิม', val: 'maintain', display: 'เป้าหมาย: คงน้ำหนักเดิม' },
-      { label: '📈 เพิ่มกล้ามเนื้อ', val: 'build_muscle', display: 'เป้าหมาย: เพิ่มกล้ามเนื้อ' }
+      { label: '💪 เพิ่มกล้ามเนื้อ', val: 'build_muscle', display: 'เป้าหมาย: เพิ่มกล้ามเนื้อ' },
+      { label: '📈 เพิ่มน้ำหนัก', val: 'gain_weight', display: 'เป้าหมาย: เพิ่มน้ำหนัก' }
     ].map(item => ({
       type: 'action' as const,
       action: {
@@ -426,6 +439,45 @@ async function sendOnboardingStep(lineUserId: string, step: string, replyToken: 
           quickReply: getProgramQuickReplies()
         }
       ]
+    });
+  }
+}
+
+/**
+ * Send wizard step via pushMessage (used when replyToken is already consumed)
+ */
+async function sendOnboardingStepPush(lineUserId: string, step: string) {
+  if (step === 'welcome') {
+    await lineClient.pushMessage({ to: lineUserId, messages: [createOnboardingWelcomeFlexMessage()] });
+  } else if (step === 'gender') {
+    await lineClient.pushMessage({
+      to: lineUserId,
+      messages: [{ type: 'text', text: '1️⃣ กรุณาเลือกเพศสภาพของคุณเพื่อประกอบการคำนวณอัตราเผาผลาญครับ:', quickReply: getGenderQuickReplies() }]
+    });
+  } else if (step === 'age') {
+    await lineClient.pushMessage({
+      to: lineUserId,
+      messages: [{ type: 'text', text: '2️⃣ กรุณาพิมพ์อายุปัจจุบันของคุณเป็นตัวเลข (เช่น 28) หรือเลือกตัวเลือกด่วนด้านล่างนี้ครับ:', quickReply: getAgeQuickReplies() }]
+    });
+  } else if (step === 'height') {
+    await lineClient.pushMessage({
+      to: lineUserId,
+      messages: [{ type: 'text', text: '3️⃣ กรุณาพิมพ์ส่วนสูงของคุณเป็นหน่วยเซนติเมตร (เช่น 170) หรือเลือกตัวเลือกด้านล่างครับ:', quickReply: getHeightQuickReplies() }]
+    });
+  } else if (step === 'weight') {
+    await lineClient.pushMessage({
+      to: lineUserId,
+      messages: [{ type: 'text', text: '4️⃣ กรุณาพิมพ์น้ำหนักปัจจุบันของคุณ (เช่น 68.5) หรือเลือกตัวเลือกด้านล่างครับ:', quickReply: getWeightQuickReplies() }]
+    });
+  } else if (step === 'activity') {
+    await lineClient.pushMessage({
+      to: lineUserId,
+      messages: [{ type: 'text', text: '5️⃣ กรุณาเลือกระดับกิจกรรมประจำวันของคุณครับ:', quickReply: getActivityQuickReplies() }]
+    });
+  } else if (step === 'program') {
+    await lineClient.pushMessage({
+      to: lineUserId,
+      messages: [{ type: 'text', text: '6️⃣ กรุณาเลือกเป้าหมายสุขภาพของคุณครับ:', quickReply: getProgramQuickReplies() }]
     });
   }
 }
@@ -663,13 +715,10 @@ async function handleOnboardingPostback(
     };
 
     const completeMsg = createOnboardingCompleteFlexMessage(fullProfile);
-    const followUpMsg = {
-      type: 'text' as const,
-      text: '🚀 แนะนำขั้นตอนถัดไป:\n1. 📸 ถ่ายรูปหรือส่งภาพอาหาร เข้ามาในแชตเพื่อบันทึกทันที\n2. ✍️ พิมพ์ชื่ออาหาร เพื่อให้ AI บันทึกด้วยข้อความ (เช่น "ข้าวมันไก่")\n3. 💬 พิมพ์คำว่า "เมนู" เพื่อเปิดเมนูหลักได้ทุกเมื่อ'
-    };
+    const tutorialMsg = createTutorialFlexMessage();
     await lineClient.replyMessage({
       replyToken,
-      messages: [completeMsg, followUpMsg]
+      messages: [completeMsg, tutorialMsg]
     });
     return true;
   }
@@ -725,10 +774,6 @@ export async function POST(req: NextRequest) {
         if (message.type === 'text') {
           const text = message.text.trim().toLowerCase();
           if (text === 'ตั้งค่า' || text === 'setup' || text === 'settings' || text === 'goal') {
-            await adminDb.collection('users').doc(lineUserId).update({
-              setupStep: 'welcome',
-              updatedAt: new Date()
-            });
             const welcomeMsg = createOnboardingWelcomeFlexMessage();
             await lineClient.replyMessage({
               replyToken,
@@ -737,7 +782,17 @@ export async function POST(req: NextRequest) {
             continue;
           }
           
-          if (text === 'เมนู' || text === 'menu' || text === 'information' || text === 'info') {
+          if (text === 'เมนู' || text === 'menu') {
+            const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://calme-line.vercel.app';
+            const menuMsg = createMainMenuFlexMessage(origin);
+            await lineClient.replyMessage({
+              replyToken,
+              messages: [menuMsg]
+            });
+            continue;
+          }
+
+          if (text === 'information' || text === 'info' || text === 'ข้อมูล') {
             const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://calme-line.vercel.app';
             const menuMsg = createMainMenuFlexMessage(origin);
             await lineClient.replyMessage({
@@ -765,7 +820,8 @@ export async function POST(req: NextRequest) {
                 }
               ]
             });
-            await sendOnboardingStep(lineUserId, currentStep, replyToken);
+            // Use pushMessage since replyToken is already consumed above
+            await sendOnboardingStepPush(lineUserId, currentStep);
           } else if (message.type === 'text') {
             await handleOnboardingText(lineUserId, message.text.trim(), currentStep, replyToken);
           }
@@ -1068,7 +1124,32 @@ export async function POST(req: NextRequest) {
             console.error('Failed to fetch LINE user profile in postback:', e);
           }
           const userProfile = await getOrCreateUserProfile(lineUserId, displayName, pictureUrl);
-          await handleOnboardingPostback(lineUserId, action, value, replyToken, userProfile);
+          try {
+            await handleOnboardingPostback(lineUserId, action, value, replyToken, userProfile);
+          } catch (e) {
+            console.error('Onboarding postback error:', e);
+            await lineClient.replyMessage({
+              replyToken,
+              messages: [{ type: 'text', text: '⚠️ เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้งครับ' }]
+            });
+          }
+          continue;
+        }
+
+        // Show setup welcome screen without resetting setupStep (same as typing "goal")
+        if (action === 'show_setup_welcome') {
+          await lineClient.replyMessage({
+            replyToken,
+            messages: [createOnboardingWelcomeFlexMessage()]
+          });
+          continue;
+        }
+
+        // Show main menu
+        if (action === 'show_menu') {
+          const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://calme-line.vercel.app';
+          const menuMsg = createMainMenuFlexMessage(origin);
+          await lineClient.replyMessage({ replyToken, messages: [menuMsg] });
           continue;
         }
 
