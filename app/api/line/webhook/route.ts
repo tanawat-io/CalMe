@@ -21,6 +21,7 @@ export interface UserProfile extends UserProfileData {
   pictureUrl: string;
   language: string;
   setupStep?: string;
+  pendingAction?: string;   // tracks what the bot is waiting for (e.g. 'log_weight')
   createdAt: Date | admin.firestore.Timestamp;
   updatedAt: Date | admin.firestore.Timestamp;
   targetCalories?: number;
@@ -904,6 +905,43 @@ export async function POST(req: NextRequest) {
         else if (message.type === 'text') {
           const text = message.text.trim().toLowerCase();
 
+          // If bot is waiting for a weight number, accept a bare number as weight input
+          if (userProfile?.pendingAction === 'log_weight') {
+            const numMatch = text.match(/^(\d+(\.\d+)?)$/);
+            if (numMatch) {
+              const weightVal = parseFloat(numMatch[1]);
+              if (weightVal >= 30 && weightVal <= 300) {
+                const userRef = adminDb.collection('users').doc(lineUserId);
+                const todayStr = getBangkokDateStr();
+                try {
+                  await userRef.collection('weightLogs').add({ weight: weightVal, date: todayStr, createdAt: new Date() });
+                  const userDoc = await userRef.get();
+                  if (userDoc.exists) {
+                    const profile = userDoc.data() as UserProfile;
+                    const newTargets = calculateMacros({ ...profile, weight: weightVal });
+                    await userRef.update({
+                      weight: weightVal,
+                      targetCalories: newTargets.calories,
+                      targetProtein: newTargets.protein,
+                      targetCarbs: newTargets.carbs,
+                      targetFat: newTargets.fat,
+                      pendingAction: null,
+                      updatedAt: new Date(),
+                    });
+                    await lineClient.replyMessage({
+                      replyToken,
+                      messages: [{ type: 'text', text: `⚖️ บันทึกน้ำหนัก ${weightVal} กก. สำเร็จ!\n🎯 เป้าหมายพลังงานใหม่: ${newTargets.calories} kcal` }],
+                    });
+                  }
+                } catch (e) {
+                  console.error('Error logging weight (pendingAction):', e);
+                  await lineClient.replyMessage({ replyToken, messages: [{ type: 'text', text: '❌ เกิดข้อผิดพลาด กรุณาลองใหม่ครับ' }] });
+                }
+                continue;
+              }
+            }
+          }
+
           // Command: cal <calories> or แคล <calories>
           const calMatch = text.match(/^(แคล|cal)\s*(\d+)$/i);
           if (calMatch) {
@@ -1066,6 +1104,7 @@ export async function POST(req: NextRequest) {
                   targetProtein: newTargets.protein,
                   targetCarbs: newTargets.carbs,
                   targetFat: newTargets.fat,
+                  pendingAction: null,   // clear any pending weight context
                   updatedAt: new Date(),
                 });
 
@@ -1218,13 +1257,15 @@ export async function POST(req: NextRequest) {
         }
 
         if (action === 'log_weight_prompt') {
+          // Mark that the bot is waiting for a weight number from this user
+          await adminDb.collection('users').doc(lineUserId).update({ pendingAction: 'log_weight' });
           const weightChoices = {
             items: [45,50,55,60,65,70,75,80,85,90].map(w => ({
               type: 'action' as const,
               action: {
                 type: 'message' as const,
                 label: `${w} กก.`,
-                text: `น้ำหนัก ${w}`,
+                text: `${w}`,
               },
             })),
           };
@@ -1233,7 +1274,7 @@ export async function POST(req: NextRequest) {
             messages: [
               {
                 type: 'text',
-                text: '⚖️ กรุณาเลือกหรือพิมพ์น้ำหนักปัจจุบันของคุณครับ (เช่น "น้ำหนัก 68.5")',
+                text: '⚖️ กรุณาพิมพ์น้ำหนักปัจจุบัน (กก.) หรือกดปุ่มด้านล่างได้เลยครับ',
                 quickReply: weightChoices,
               },
             ],
