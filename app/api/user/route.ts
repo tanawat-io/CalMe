@@ -93,7 +93,7 @@ export async function PUT(req: NextRequest) {
     await userRef.set(fullProfile, { merge: true });
 
     // Proactively log this weight update in weightLogs as well
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0]; // Bangkok UTC+7
     await userRef.collection('weightLogs').add({
       weight: fullProfile.weight,
       date: todayStr,

@@ -26,14 +26,19 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const today = new Date();
+    // Bangkok UTC+7 helper
+    const bangkokMs = () => Date.now() + 7 * 3600000;
+    const bangkokDateStr = (offsetDays = 0) => {
+      const d = new Date(bangkokMs());
+      d.setUTCDate(d.getUTCDate() - offsetDays);
+      return d.toISOString().split('T')[0];
+    };
+
     const datesList: string[] = [];
-    
-    // Generate array of last 7 dates (YYYY-MM-DD)
+
+    // Generate array of last 7 dates (YYYY-MM-DD) in Bangkok time
     for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      datesList.push(d.toISOString().split('T')[0]);
+      datesList.push(bangkokDateStr(i));
     }
 
     const startDateStr = datesList[0];
@@ -71,40 +76,36 @@ export async function GET(req: NextRequest) {
       fat: dailyTotals[date].fat,
     }));
 
-    // Calculate streak (consecutive days with logs, going backward from today)
+    // Calculate streak (consecutive days with logs, going backward from today) — Bangkok UTC+7
     let streak = 0;
-    let checkDate = new Date();
-    
+    let checkDayOffset = 0; // 0 = today, 1 = yesterday, …
+
     while (true) {
-      const dateStr = checkDate.toISOString().split('T')[0];
+      const dateStr = bangkokDateStr(checkDayOffset);
       const logsSnap = await foodLogsRef
         .where('date', '==', dateStr)
         .where('confirmed', '==', true)
         .limit(1)
         .get();
-      
+
       if (!logsSnap.empty) {
         streak++;
-        // Go back 1 day
-        checkDate.setDate(checkDate.getDate() - 1);
+        checkDayOffset++;
       } else {
         // If it's today and empty, check yesterday to keep streak alive
         if (streak === 0) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          const yesterdayStr = bangkokDateStr(1);
           const yesterdaySnap = await foodLogsRef
             .where('date', '==', yesterdayStr)
             .where('confirmed', '==', true)
             .limit(1)
             .get();
-          
+
           if (!yesterdaySnap.empty) {
-            // Yes, user logged yesterday but not today yet, streak is alive
+            // User logged yesterday but not today yet — streak is alive
             streak = 1;
-            checkDate = yesterday;
-            checkDate.setDate(checkDate.getDate() - 1);
-            continue; // Keep checking backwards
+            checkDayOffset = 2; // next iteration checks 2 days ago
+            continue;
           }
         }
         break; // Streak broken

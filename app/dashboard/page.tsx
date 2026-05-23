@@ -254,7 +254,7 @@ export default function DashboardPage() {
             fat: parseInt(foodForm.fat) || 0,
             portionSize: foodForm.portionSize,
             mealType: foodForm.mealType,
-            date: new Date().toISOString().split('T')[0],
+            date: new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0],
           };
 
       const response = await fetch(url, {
@@ -298,7 +298,7 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({
           weight: parseFloat(weightInput),
-          date: new Date().toISOString().split('T')[0],
+          date: new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0],
         }),
       });
       if (response.ok) {
