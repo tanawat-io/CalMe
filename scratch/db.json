@@ -1,0 +1,27 @@
+{
+  "users": {
+    "test-user": {
+      "displayName": "Test User",
+      "pictureUrl": "https://lh3.googleusercontent.com/a/default-user=s96-c",
+      "weight": 70,
+      "height": 170,
+      "age": 25,
+      "gender": "male",
+      "activityLevel": "moderate",
+      "program": "build_muscle",
+      "language": "th",
+      "updatedAt": "2026-05-22T15:02:33.506Z",
+      "targetCalories": 2846,
+      "targetProtein": 249,
+      "targetCarbs": 320,
+      "targetFat": 63,
+      "weightLogs": {
+        "1prognwt9ev": {
+          "weight": 70,
+          "date": "2026-05-22",
+          "createdAt": "2026-05-22T15:02:33.508Z"
+        }
+      }
+    }
+  }
+}
